@@ -26,7 +26,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.4.0</version>
                 <configuration>
-                    <mainClass>com.microsoft.azure.management.trafficmanager.samples.ManageTrafficManager.java</mainClass>
+                    <mainClass>com.microsoft.azure.management.trafficmanager.samples.ManageTrafficManager</mainClass>
                 </configuration>
             </plugin>
             <plugin>
