@@ -7,10 +7,19 @@ author: anuchandy
 #Getting Started with Trafficmanager - Manage Traffic Manager - in Java #
 
 
-      Main function which runs the actual sample.
-      @param azure instance of the azure client
-      @return true if sample runs successfully
-     
+  Azure traffic manager sample for managing profiles.
+   - Create a domain
+   - Create a self-signed certificate for the domain
+   - Create 5 app service plans in 5 different regions
+   - Create 5 web apps under the each plan, bound to the domain and the certificate
+   - Create a traffic manager in front of the web apps
+   - Disable an endpoint
+   - Delete an endpoint
+   - Enable an endpoint
+   - Change/configure traffic manager routing method
+   - Disable traffic manager profile
+   - Enable traffic manager profile
+ 
 
 ## Running this Sample ##
 
