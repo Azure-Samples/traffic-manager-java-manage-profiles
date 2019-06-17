@@ -1,7 +1,7 @@
 ---
 services: Trafficmanager
 platforms: java
-author: anuchandy
+author: yaohaizh
 ---
 
 ## Getting Started with Trafficmanager - Manage Traffic Manager - in Java ##
