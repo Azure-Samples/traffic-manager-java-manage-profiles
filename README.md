@@ -4,12 +4,12 @@ languages:
 - java
 products:
 - azure
-services: Trafficmanager
-platforms: java
-author: yaohaizh
+extensions:
+- services: Trafficmanager
+- platforms: java
 ---
 
-## Getting Started with Trafficmanager - Manage Traffic Manager - in Java ##
+# Getting Started with Trafficmanager - Manage Traffic Manager - in Java #
 
 
   Azure traffic manager sample for managing profiles.
