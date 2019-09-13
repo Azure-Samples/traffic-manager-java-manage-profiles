@@ -4,9 +4,8 @@ languages:
 - java
 products:
 - azure
-extensions:
-- services: Trafficmanager
-- platforms: java
+description: "Getting Started with Trafficmanager - Manage Traffic Manager - in Java"
+urlFragment: traffic-manager-java-manage-profiles
 ---
 
 # Getting Started with Trafficmanager - Manage Traffic Manager - in Java #
