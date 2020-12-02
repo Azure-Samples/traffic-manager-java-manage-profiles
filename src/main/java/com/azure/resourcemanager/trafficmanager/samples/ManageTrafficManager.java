@@ -1,27 +1,28 @@
-/**
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for
- * license information.
- */
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-package com.microsoft.azure.management.trafficmanager.samples;
+package com.azure.resourcemanager.trafficmanager.samples;
 
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.appservice.AppServiceDomain;
-import com.microsoft.azure.management.appservice.OperatingSystem;
-import com.microsoft.azure.management.appservice.AppServicePlan;
-import com.microsoft.azure.management.appservice.PricingTier;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.resources.fluentcore.arm.CountryIsoCode;
-import com.microsoft.azure.management.resources.fluentcore.arm.CountryPhoneCode;
-import com.microsoft.azure.management.resources.fluentcore.arm.Region;
-import com.microsoft.azure.management.resources.fluentcore.model.Creatable;
-import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
-import com.microsoft.azure.management.samples.Utils;
-import com.microsoft.azure.management.trafficmanager.TrafficManagerProfile;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.appservice.models.AppServiceDomain;
+import com.azure.resourcemanager.appservice.models.AppServicePlan;
+import com.azure.resourcemanager.appservice.models.OperatingSystem;
+import com.azure.resourcemanager.appservice.models.PricingTier;
+import com.azure.resourcemanager.appservice.models.WebApp;
+import com.azure.resourcemanager.resources.fluentcore.arm.CountryIsoCode;
+import com.azure.resourcemanager.resources.fluentcore.arm.CountryPhoneCode;
+import com.azure.core.management.Region;
+import com.azure.resourcemanager.resources.fluentcore.model.Creatable;
+import com.azure.resourcemanager.samples.Utils;
+import com.azure.resourcemanager.trafficmanager.models.TrafficManagerProfile;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,28 +45,27 @@ public final class ManageTrafficManager {
 
     /**
      * Main function which runs the actual sample.
-     * @param azure instance of the azure client
+     * @param azureResourceManager instance of the azure client
      * @return true if sample runs successfully
      */
-    public static boolean runSample(Azure azure) {
-        final String rgName                     = SdkContext.randomResourceName("rgNEMV_", 24);
-        final String domainName                 = SdkContext.randomResourceName("jsdkdemo-", 20) + ".com";
+    public static boolean runSample(AzureResourceManager azureResourceManager) throws IOException {
+        final String rgName                     = Utils.randomResourceName(azureResourceManager, "rgNEMV_", 24);
+        final String domainName                 = Utils.randomResourceName(azureResourceManager, "jsdkdemo-", 20) + ".com";
         // [SuppressMessage("Microsoft.Security", "CS002:SecretInNextLine", Justification="Serves as an example, not for deployment. Please change when using this in your code.")]
         final String certPassword               = "StrongPass!12";
-        final String appServicePlanNamePrefix   = SdkContext.randomResourceName("jplan1_", 15);
-        final String webAppNamePrefix           = SdkContext.randomResourceName("webapp1-", 20);
-        final String tmName                     = SdkContext.randomResourceName("jsdktm-", 20);
+        final String appServicePlanNamePrefix   = Utils.randomResourceName(azureResourceManager, "jplan1_", 15);
+        final String webAppNamePrefix           = Utils.randomResourceName(azureResourceManager, "webapp1-", 20);
+        final String tmName                     = Utils.randomResourceName(azureResourceManager, "jsdktm-", 20);
         final List<Region> regions              = new ArrayList<>();
         // The regions in which web app needs to be created
         //
         regions.add(Region.US_WEST2);
         regions.add(Region.US_EAST2);
         regions.add(Region.ASIA_EAST);
-        regions.add(Region.INDIA_WEST);
         regions.add(Region.US_CENTRAL);
 
         try {
-            azure.resourceGroups().define(rgName)
+            azureResourceManager.resourceGroups().define(rgName)
                     .withRegion(Region.US_WEST)
                     .create();
 
@@ -73,7 +73,7 @@ public final class ManageTrafficManager {
             // Purchase a domain (will be canceled for a full refund)
 
             System.out.println("Purchasing a domain " + domainName + "...");
-            AppServiceDomain domain = azure.appServices().domains().define(domainName)
+            AppServiceDomain domain = azureResourceManager.appServiceDomains().define(domainName)
                     .withExistingResourceGroup(rgName)
                     .defineRegistrantContact()
                         .withFirstName("Jon")
@@ -96,12 +96,12 @@ public final class ManageTrafficManager {
             //============================================================
             // Create a self-singed SSL certificate
 
-            String pfxPath = ManageTrafficManager.class.getResource("/").getPath() + "webapp_" + ManageTrafficManager.class.getSimpleName().toLowerCase() + ".pfx";
-            String cerPath = ManageTrafficManager.class.getResource("/").getPath() + "webapp_" + ManageTrafficManager.class.getSimpleName().toLowerCase() + ".cer";
+            String pfxPath = ManageTrafficManager.class.getResource("/").getPath() + "webapp_" + domainName + ".pfx";
+            String cerPath = ManageTrafficManager.class.getResource("/").getPath() + "webapp_" + domainName + ".cer";
 
             System.out.println("Creating a self-signed certificate " + pfxPath + "...");
 
-            Utils.createCertificate(cerPath, pfxPath, domainName, certPassword, "*." + domainName);
+            Utils.createCertificate(cerPath, pfxPath, domainName, certPassword, "*." + domainName, null);
 
             //============================================================
             // Creates app service in 5 different region
@@ -111,7 +111,7 @@ public final class ManageTrafficManager {
             for (Region region : regions) {
                 String planName = appServicePlanNamePrefix + id;
                 System.out.println("Creating an app service plan " + planName + " in region " + region + "...");
-                AppServicePlan appServicePlan = azure.appServices().appServicePlans().define(planName)
+                AppServicePlan appServicePlan = azureResourceManager.appServicePlans().define(planName)
                         .withRegion(region)
                         .withExistingResourceGroup(rgName)
                         .withPricingTier(PricingTier.BASIC_B1)
@@ -130,7 +130,7 @@ public final class ManageTrafficManager {
             for (AppServicePlan appServicePlan : appServicePlans) {
                 String webAppName = webAppNamePrefix + id;
                 System.out.println("Creating a web app " + webAppName + " using the plan " + appServicePlan.name() + "...");
-                WebApp webApp = azure.webApps().define(webAppName)
+                WebApp webApp = azureResourceManager.webApps().define(webAppName)
                         .withExistingWindowsPlan(appServicePlan)
                         .withExistingResourceGroup(rgName)
                         .withManagedHostnameBindings(domain, webAppName)
@@ -154,7 +154,7 @@ public final class ManageTrafficManager {
             // Creates a traffic manager profile
 
             System.out.println("Creating a traffic manager profile " + tmName + " for the web apps...");
-            TrafficManagerProfile.DefinitionStages.WithEndpoint tmDefinition = azure.trafficManagerProfiles()
+            TrafficManagerProfile.DefinitionStages.WithEndpoint tmDefinition = azureResourceManager.trafficManagerProfiles()
                     .define(tmName)
                         .withExistingResourceGroup(rgName)
                         .withLeafDomainLabel(tmName)
@@ -227,16 +227,13 @@ public final class ManageTrafficManager {
             // Deletes the traffic manager profile
 
             System.out.println("Deleting the traffic manger profile...");
-            azure.trafficManagerProfiles().deleteById(trafficManagerProfile.id());
+            azureResourceManager.trafficManagerProfiles().deleteById(trafficManagerProfile.id());
             System.out.println("Traffic manager profile deleted");
             return true;
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
         } finally {
             try {
                 System.out.println("Deleting Resource Group: " + rgName);
-                azure.resourceGroups().beginDeleteByName(rgName);
+                azureResourceManager.resourceGroups().beginDeleteByName(rgName);
                 System.out.println("Deleted Resource Group: " + rgName);
             } catch (NullPointerException npe) {
                 System.out.println("Did not create any resources in Azure. No clean up is necessary");
@@ -244,7 +241,6 @@ public final class ManageTrafficManager {
                 g.printStackTrace();
             }
         }
-        return false;
     }
     /**
      * Main entry point.
@@ -254,18 +250,22 @@ public final class ManageTrafficManager {
         try {
             //=============================================================
             // Authenticate
+            //
+            final AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
+            final TokenCredential credential = new DefaultAzureCredentialBuilder()
+                .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
+                .build();
 
-            final File credFile = new File(System.getenv("AZURE_AUTH_LOCATION"));
-
-            Azure azure = Azure.configure()
-                    .withLogLevel(LogLevel.BASIC)
-                    .authenticate(credFile)
-                    .withDefaultSubscription();
+            AzureResourceManager azureResourceManager = AzureResourceManager
+                .configure()
+                .withLogLevel(HttpLogDetailLevel.BASIC)
+                .authenticate(credential, profile)
+                .withDefaultSubscription();
 
             // Print selected subscription
-            System.out.println("Selected subscription: " + azure.subscriptionId());
+            System.out.println("Selected subscription: " + azureResourceManager.subscriptionId());
 
-            runSample(azure);
+            runSample(azureResourceManager);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
